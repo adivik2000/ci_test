@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: iterative/setup-cml@v2
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,7 +30,6 @@ jobs:
           python src/evaluate.py >> report.md
 
       - name: Comment with CML
-        uses: iterative/setup-cml@v1
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
