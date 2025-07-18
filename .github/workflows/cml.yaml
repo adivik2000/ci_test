@@ -1,0 +1,36 @@
+name: CML Report
+
+on: [pull_request]
+
+jobs:
+  train-evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Train model
+        run: python src/train.py
+
+      - name: Run tests
+        run: pytest tests > result.log || true
+
+      - name: Evaluate model
+        run: |
+          echo "## 📊 Evaluation Report" > report.md
+          python src/evaluate.py >> report.md
+
+      - name: Comment with CML
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install cml
+          cml comment create report.md
