@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 
 def load_data():
-    df = pd.read_csv("../data/iris.csv")
+    df = pd.read_csv("data/iris.csv")
     return df
 
 def preprocess_data(df):
