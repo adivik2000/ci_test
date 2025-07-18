@@ -2,11 +2,17 @@ name: CML Report
 
 on: [pull_request]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   train-evaluate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: iterative/setup-cml@v2
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -28,9 +34,34 @@ jobs:
           echo "## 📊 Evaluation Report" > report.md
           python src/evaluate.py >> report.md
 
-      - name: Comment with CML
+      - name: Compare metrics
+        id: compare
+        run: |
+          echo "🔍 Comparing metrics..."
+          git fetch origin main:main
+
+          OLD_ACC=$(git show main:metrics.json | jq '.accuracy')
+          NEW_ACC=$(jq '.accuracy' metrics.json)
+
+          echo "Old Accuracy: $OLD_ACC"
+          echo "New Accuracy: $NEW_ACC"
+
+          CHANGE=$(echo "$NEW_ACC - $OLD_ACC" | bc -l)
+
+          COMMENT="## 🔁 Metric Comparison Report\n"
+          COMMENT+="**Previous Accuracy (main)**: $OLD_ACC\n"
+          COMMENT+="**New Accuracy (PR)**: $NEW_ACC\n"
+
+          if (( $(echo "$CHANGE < 0" | bc -l) )); then
+            COMMENT+="⚠️ **Accuracy dropped by $(echo "$CHANGE * -1" | bc -l)**\n"
+          else
+            COMMENT+="✅ **Accuracy improved by $CHANGE**\n"
+          fi
+
+          echo -e "$COMMENT" > metrics_comment.md
+
+      - name: Comment on PR
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pip install cml
-          cml comment create report.md
+          cml comment create metrics_comment.md
