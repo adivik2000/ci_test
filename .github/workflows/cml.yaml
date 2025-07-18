@@ -29,6 +29,7 @@ jobs:
           python src/evaluate.py >> report.md
 
       - name: Comment with CML
+        uses: iterative/setup-cml@v1
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
